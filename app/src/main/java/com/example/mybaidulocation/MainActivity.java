@@ -166,7 +166,7 @@ public class MainActivity extends AppCompatActivity {
     // 根据栅格判断拥堵的标签
     public String checkLabel(int rowId,int colId){
         Cursor cursor = readableDB.query("cell",null,"rowid=? and colid=?",
-                new String[]{String.valueOf(17),String.valueOf(26)},null,null,null,null);
+                new String[]{String.valueOf(rowId),String.valueOf(colId)},null,null,null,null);
         cursor.moveToFirst();
         @SuppressLint("Range")
         String label = cursor.getString(cursor.getColumnIndex("label"));
