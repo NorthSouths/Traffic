@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -47,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // 数据库部分
+        // 数据库部分，数据库名为traffic
         helper = new MyDataBaseHelper(this,"traffic.db",null,1);
         writableDB = helper.getWritableDatabase();
         readableDB = helper.getWritableDatabase();
@@ -145,13 +146,55 @@ public class MainActivity extends AppCompatActivity {
                     .longitude(location.getLongitude()).build();
             mBaiduMap.setMyLocationData(locData);
 
+
             //获取经纬度
             StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.append("\n经度：" + location.getLatitude());
-            stringBuilder.append("\n纬度："+ location.getLongitude());
+            stringBuilder.append("\n纬度：" + location.getLatitude());
+            stringBuilder.append("\n经度："+ location.getLatitude());
             mtextView.setText(stringBuilder.toString());
 
+            // 做查询判断是否拥堵
+            // grid[0]=rowId,grid[1]=colId
+            int[] grid = translation(location.getLatitude(),location.getLatitude());
+            String label = checkLabel(grid[0],grid[1]);
+            System.out.println(label);
+            Toast.makeText(MainActivity.this,label,Toast.LENGTH_SHORT).show();
+
         }
+    }
+
+    // 根据栅格判断拥堵的标签
+    public String checkLabel(int rowId,int colId){
+        Cursor cursor = readableDB.query("cell",null,"rowid=? and colid=?",
+                new String[]{String.valueOf(17),String.valueOf(26)},null,null,null,null);
+        cursor.moveToFirst();
+        @SuppressLint("Range")
+        String label = cursor.getString(cursor.getColumnIndex("label"));
+        String res = null;
+        if(label.equals("0"))
+            res = "拥挤";
+        else if(label.equals("1"))
+            res = "缓行";
+        else if(label.equals("2"))
+            res = "畅通";
+        return res;
+
+    }
+
+    // lat纬度，lon经度
+    public static int[] translation(double lon, double lat){
+        double lon_min=21.7582;
+        double lon_max=23.1249;
+        double lat_min=113.561;
+        double lat_max=114.395;
+        int accuracy  = 2000;
+        double deltaLon = -(accuracy * 360 / (2 * Math.PI * 6371004 * Math.cos((lat_min + lat_max) * Math.PI / 360)));
+        double deltaLat = accuracy * 360 / (2 * Math.PI * 6371004);
+        int rowid= (int) Math.floor((lon - lon_min)/deltaLon);
+        int colid= (int) Math.floor((lat - lat_min)/deltaLat);
+//        System.out.println(rowid);
+//        System.out.println(colid);
+        return new int[]{rowid,colid};
     }
 
     @Override
