@@ -24,9 +24,16 @@ import com.baidu.mapapi.map.MyLocationConfiguration;
 import com.baidu.mapapi.map.MyLocationData;
 import com.baidu.mapapi.model.LatLng;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.io.InputStream;
 
+import java.util.Date;
+
+
 public class MainActivity extends AppCompatActivity {
+
+
 
     private MapView mMapView;
     private BaiduMap mBaiduMap;
@@ -146,17 +153,27 @@ public class MainActivity extends AppCompatActivity {
                     .longitude(location.getLongitude()).build();
             mBaiduMap.setMyLocationData(locData);
 
+            //获取当前时间
+            long now = System.currentTimeMillis();
+            SimpleDateFormat sdfOne = new SimpleDateFormat("yyyy-MM-dd");
+            int overTime = 0;
+            try {
+                overTime = (int) ((now - (sdfOne.parse(sdfOne.format(now)).getTime()))/1000);
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+
 
             //获取经纬度
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.append("\n纬度：" + location.getLatitude());
-            stringBuilder.append("\n经度："+ location.getLatitude());
+            stringBuilder.append("\n经度："+ location.getLongitude());
             mtextView.setText(stringBuilder.toString());
 
             // 做查询判断是否拥堵
             // grid[0]=rowId,grid[1]=colId
-            int[] grid = translation(location.getLatitude(),location.getLatitude());
-            String label = checkLabel(grid[0],grid[1]);
+            int[] grid = translation(location.getLatitude(),location.getLongitude());
+            String label = checkLabel(grid[0],grid[1],overTime);
             System.out.println(label);
             Toast.makeText(MainActivity.this,label,Toast.LENGTH_SHORT).show();
 
@@ -164,9 +181,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // 根据栅格判断拥堵的标签
-    public String checkLabel(int rowId,int colId){
-        Cursor cursor = readableDB.query("cell",null,"rowid=? and colid=?",
-                new String[]{String.valueOf(rowId),String.valueOf(colId)},null,null,null,null);
+    public String checkLabel(int rowId,int colId,int time_id){
+        Cursor cursor = readableDB.query("cell",null,"rowid=? and colid=? and time_id=?",
+                new String[]{String.valueOf(rowId),String.valueOf(colId),String.valueOf(time_id)},null,null,null,null);
         cursor.moveToFirst();
         @SuppressLint("Range")
         String label = cursor.getString(cursor.getColumnIndex("label"));
